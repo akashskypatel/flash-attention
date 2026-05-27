@@ -276,7 +276,7 @@ if not SKIP_CUDA_BUILD and not IS_ROCM:
 
     nvcc_flags = [
     "-O3",
-    "-std=c++17",
+    # "-std=c++17",
     "-U__CUDA_NO_HALF_OPERATORS__",
     "-U__CUDA_NO_HALF_CONVERSIONS__",
     "-U__CUDA_NO_HALF2_OPERATORS__",
@@ -284,6 +284,14 @@ if not SKIP_CUDA_BUILD and not IS_ROCM:
     "--expt-relaxed-constexpr",
     "--expt-extended-lambda",
     "--use_fast_math",
+    "--extended-lambda",
+    "-std=c++20",
+    "-Xcompiler=/std:c++17",
+    "-Xcompiler=/EHsc", 
+    "-Xcompiler=/permissive-", 
+    "-Xcompiler=/Zc:__cplusplus",
+    "-Xcompiler=/Zc:preprocessor",
+    "-allow-unsupported-compiler",
     # "--ptxas-options=-v",
     # "--ptxas-options=-O2",
     # "-lineinfo",
@@ -299,7 +307,14 @@ if not SKIP_CUDA_BUILD and not IS_ROCM:
     # Add Windows-specific flags
     if sys.platform == "win32" and os.getenv('DISTUTILS_USE_SDK') == '1':
         nvcc_flags.extend(["-Xcompiler", "/Zc:__cplusplus"])
-        compiler_c17_flag=["-O2", "/std:c++17", "/Zc:__cplusplus"]
+        compiler_c17_flag=[
+            "-O2", 
+            "/std:c++17", 
+            "/Zc:__cplusplus",
+            "/EHsc", 
+            "/permissive-", 
+            "/Zc:preprocessor",
+        ]
 
     ext_modules.append(
         CUDAExtension(
