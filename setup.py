@@ -198,42 +198,6 @@ def append_nvcc_threads(nvcc_extra_args):
     return nvcc_extra_args + ["--threads", NVCC_THREADS]
 
 
-def get_cuda_obj_cache_dir() -> tuple[Optional[Path], list[str]]:
-    """
-    Detect cached CUDA .obj files under a versioned cuXXX-cache directory.
-
-    Examples:
-      cu132-cache/
-      cu121-cache/
-
-    Override with:
-      FLASH_ATTN_CUDA_OBJ_CACHE_DIR=D:/path/to/cu132-cache
-
-    Disable with:
-      FLASH_ATTN_DISABLE_OBJ_CACHE=TRUE
-    """
-    if os.getenv("FLASH_ATTN_DISABLE_OBJ_CACHE", "FALSE") == "TRUE":
-        return None, []
-
-    explicit = os.getenv("FLASH_ATTN_CUDA_OBJ_CACHE_DIR")
-    if explicit:
-        cache_dir = Path(explicit)
-    else:
-        torch_cuda = parse(torch.version.cuda)
-        cache_name = f"cu{torch_cuda.major}{torch_cuda.minor}-cache"
-        cache_dir = Path(this_dir) / cache_name
-
-    objs = sorted(str(p.resolve()) for p in cache_dir.rglob("*.obj"))
-
-    if objs:
-        print(f"Using cached CUDA objects from: {cache_dir}")
-        print(f"Found {len(objs)} cached CUDA .obj files")
-        return cache_dir, objs
-
-    print(f"No cached CUDA objects found under: {cache_dir}")
-    return cache_dir, []
-
-
 def should_refresh_cuda_obj_cache() -> bool:
     """
     Check if CUDA object cache should be refreshed.
@@ -262,10 +226,15 @@ def get_cuda_obj_cache_name() -> str:
 def get_cuda_obj_cache_dir() -> tuple[Path, list[str]]:
     explicit = os.getenv("FLASH_ATTN_CUDA_OBJ_CACHE_DIR")
     cache_dir = (
-        Path(explicit) if explicit else Path(this_dir) / get_cuda_obj_cache_name()
+        Path(explicit) if explicit else Path(this_dir) / "build" / get_cuda_obj_cache_name()
     )
 
+    print(f"CUDA obj cache dir: {cache_dir}")
+    print(f"Refresh cache: {should_refresh_cuda_obj_cache()}")
+    print(f"Disable cache: {should_disable_cuda_obj_cache()}")
+
     if should_disable_cuda_obj_cache() or should_refresh_cuda_obj_cache():
+        print("CUDA obj cache intentionally ignored.")
         return cache_dir, []
 
     objs = (
@@ -273,6 +242,9 @@ def get_cuda_obj_cache_dir() -> tuple[Path, list[str]]:
         if cache_dir.exists()
         else []
     )
+
+    print(f"Found cached CUDA obj files: {len(objs)}")
+
     return cache_dir, objs
 
 
